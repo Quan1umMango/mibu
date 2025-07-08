@@ -29,9 +29,10 @@ pub fn main() !void {
 
     try stdout.writer().print("Press q or Ctrl-C to exit...\n\r", .{});
 
+    events.initEvents();
     while (true) {
-        // const next = try events.nextWithTimeout(stdin, 1000);
-        const next = try events.next(stdin.reader());
+        const next = try events.nextWithTimeout(stdin, 0);
+        //const next = try events.next(stdin.reader());
         switch (next) {
             .key => |k| switch (k) {
                 .char => |c| switch (c) {
@@ -45,9 +46,10 @@ pub fn main() !void {
                 else => try stdout.writer().print("{s}\n\r", .{k}),
             },
             .mouse => |m| try stdout.writer().print("Mouse: {s}\n\r", .{m}),
-            .none => try stdout.writer().print("Timeout.\n\r", .{}),
 
-            // ex. mouse events not supported yet
+            //.none => try stdout.writer().print("Timeout.\n\r", .{}),
+            .none => {},
+
             else => try stdout.writer().print("Event: {any}\n\r", .{next}),
         }
     }

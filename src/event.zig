@@ -5,6 +5,29 @@ const windows = std.os.windows;
 
 const cursor = @import("cursor.zig");
 
+var hasResized: bool = false;
+
+pub fn initEvents() void {
+    switch (@import("builtin").os.tag) {
+        .linux => {
+            var sa = std.os.linux.Sigaction{
+                .handler = .{ .handler = handleWINCHLinux },
+                .mask = [_]c_ulong{0},
+                .flags = 0,
+                //.restorer = null,
+            };
+
+            _ = std.os.linux.sigaction(std.os.linux.SIG.WINCH, &sa, null);
+        },
+        .macos => return error.UnimplementedPlatform,
+        else => return error.UnimplementedPlatform,
+    }
+}
+
+pub fn handleWINCHLinux(_: c_int) callconv(.C) void {
+    hasResized = true;
+}
+
 pub const Event = union(enum) {
     key: Key,
     mouse: Mouse,
@@ -178,7 +201,19 @@ pub fn nextWithTimeout(in: anytype, timeout_ms: i32) !Event {
     }
 }
 
+pub fn hasTermResized() !bool {
+    switch (@import("builtin").os.tag) {
+        .linux => return hasResized,
+        .macos => return error.UnimplementedPlatform,
+        else => return error.UnimplementedPlatform,
+    }
+}
+
 fn nextWithTimeoutPosix(in: anytype, timeout_ms: i32) !Event {
+    if (try hasTermResized()) {
+        hasResized = false;
+        return .resize;
+    }
     var polls: [1]std.posix.pollfd = .{.{
         .fd = in.handle,
         .events = std.posix.POLL.IN,
