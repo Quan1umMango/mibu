@@ -185,7 +185,7 @@ fn nextWithTimeoutPosix(in: anytype, timeout_ms: i32) !Event {
         .revents = 0,
     }};
     if ((try std.posix.poll(&polls, timeout_ms)) > 0) {
-        return next(in);
+        return next(in.reader());
     }
 
     return .none;
